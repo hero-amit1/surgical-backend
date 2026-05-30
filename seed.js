@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
+
 import Admin from './src/models/Admin.js';
 import Product from './src/models/Product.js';
 import User from './src/models/User.js';
@@ -10,6 +11,7 @@ dotenv.config();
 const seedDatabase = async () => {
     try {
         const mongoUri = process.env.MONGODB_URI;
+
         if (!mongoUri) {
             console.error('Missing MONGODB_URI in .env');
             process.exit(1);
@@ -18,41 +20,41 @@ const seedDatabase = async () => {
         await mongoose.connect(mongoUri);
         console.log('✅ Connected to MongoDB');
 
-        // Clear existing data
+        // Clear old data
         await Admin.deleteMany({});
         await Product.deleteMany({});
         await User.deleteMany({});
-        console.log('🗑️  Cleared existing data');
+        console.log('🗑️ Cleared existing data');
 
-        // Create admin account
-        const adminData = {
+        // 🔥 HASH PASSWORDS (IMPORTANT FIX)
+        const adminPasswordHash = await bcrypt.hash('Admin@123', 10);
+        const userPasswordHash = await bcrypt.hash('User@123', 10);
+
+        // Create admin
+        const admin = await Admin.create({
             email: 'admin@test.com',
-            password: 'Admin@123',
+            password: adminPasswordHash,
             name: 'Test Admin',
             role: 'admin'
-        };
+        });
 
-        const admin = new Admin(adminData);
-        await admin.save();
-        console.log('✅ Admin created:');
-        console.log(`   Email: ${adminData.email}`);
-        console.log(`   Password: ${adminData.password}`);
+        console.log('✅ Admin created');
+        console.log('   Email: admin@test.com');
+        console.log('   Password: Admin@123');
 
-        // Create test user
-        const userData = {
+        // Create user
+        const user = await User.create({
             email: 'user@test.com',
-            password: 'User@123',
+            password: userPasswordHash,
             name: 'Test User',
             phone: '9876543210'
-        };
+        });
 
-        const user = new User(userData);
-        await user.save();
-        console.log('\n✅ Test user created:');
-        console.log(`   Email: ${userData.email}`);
-        console.log(`   Password: ${userData.password}`);
+        console.log('\n✅ User created');
+        console.log('   Email: user@test.com');
+        console.log('   Password: User@123');
 
-        // Create sample products
+        // Products
         const products = [
             {
                 name: 'Surgical Mask',
@@ -106,20 +108,13 @@ const seedDatabase = async () => {
         ];
 
         await Product.insertMany(products);
-        console.log(`\n✅ Created ${products.length} sample products`);
+        console.log(`\n✅ Created ${products.length} products`);
 
-        console.log('\n🎉 Database seeding completed!');
-        console.log('\n📝 Credentials for testing:');
-        console.log('   ADMIN:');
-        console.log(`     Email: admin@test.com`);
-        console.log(`     Password: Admin@123`);
-        console.log('   USER:');
-        console.log(`     Email: user@test.com`);
-        console.log(`     Password: User@123`);
-
+        console.log('\n🎉 Seeding completed successfully!');
         process.exit(0);
-    } catch (error) {
-        console.error('❌ Seeding failed:', error.message);
+
+    } catch (err) {
+        console.error('❌ Seeding failed:', err);
         process.exit(1);
     }
 };
