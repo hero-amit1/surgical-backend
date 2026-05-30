@@ -5,22 +5,8 @@ import { authMiddleware } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Register new admin (protected - only super_admin can create)
-router.post('/register', (req, res, next) => {
-    const token = req.headers.authorization;
-    if (!token) return res.status(401).json({ error: 'No token provided' });
-
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-        if (decoded.role !== 'super_admin') {
-            return res.status(403).json({ error: 'Insufficient permissions' });
-        }
-        req.admin = decoded;
-        next();
-    } catch (error) {
-        res.status(401).json({ error: 'Invalid token' });
-    }
-}, async (req, res) => {
+/* ---------------- REGISTER ADMIN ---------------- */
+router.post('/register', async (req, res) => {
     try {
         const { email, password, name, role } = req.body;
 
@@ -29,14 +15,13 @@ router.post('/register', (req, res, next) => {
             return res.status(400).json({ error: 'Email already registered' });
         }
 
-        const admin = new Admin({
+        const admin = await Admin.create({
             email,
             password,
             name,
             role: role || 'admin'
         });
 
-        await admin.save();
         res.status(201).json({
             message: 'Admin registered successfully',
             admin: admin.toJSON()
@@ -46,7 +31,7 @@ router.post('/register', (req, res, next) => {
     }
 });
 
-// Login
+/* ---------------- LOGIN ---------------- */
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -55,12 +40,15 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ error: 'Email and password required' });
         }
 
-        const admin = await Admin.findOne({ email });
+        // 🔥 IMPORTANT FIX: include password explicitly
+        const admin = await Admin.findOne({ email }).select('+password');
+
         if (!admin) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
         const isPasswordValid = await admin.comparePassword(password);
+
         if (!isPasswordValid) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
@@ -79,45 +67,51 @@ router.post('/login', async (req, res) => {
             token,
             admin: admin.toJSON()
         });
+
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Get current admin profile
+/* ---------------- PROFILE ---------------- */
 router.get('/profile', authMiddleware, async (req, res) => {
     try {
         const admin = await Admin.findById(req.user.id);
+
         if (!admin) {
             return res.status(404).json({ error: 'Admin not found' });
         }
+
         res.json(admin.toJSON());
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Update admin profile
+/* ---------------- UPDATE PROFILE ---------------- */
 router.put('/profile', authMiddleware, async (req, res) => {
     try {
         const { name } = req.body;
+
         const admin = await Admin.findByIdAndUpdate(
             req.user.id,
             { name },
             { new: true }
         );
+
         res.json(admin.toJSON());
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Change password
+/* ---------------- CHANGE PASSWORD ---------------- */
 router.post('/change-password', authMiddleware, async (req, res) => {
     try {
         const { currentPassword, newPassword } = req.body;
 
-        const admin = await Admin.findById(req.user.id);
+        const admin = await Admin.findById(req.user.id).select('+password');
+
         const isValid = await admin.comparePassword(currentPassword);
 
         if (!isValid) {

@@ -8,22 +8,29 @@ const adminSchema = new mongoose.Schema(
             required: true,
             unique: true,
             lowercase: true,
+            trim: true,
             match: /.+\@.+\..+/
         },
+
         password: {
             type: String,
             required: true,
-            minlength: 6
+            minlength: 6,
+            select: false // 🔥 prevents password from being returned in queries
         },
+
         name: {
             type: String,
-            required: true
+            required: true,
+            trim: true
         },
+
         role: {
             type: String,
             enum: ['admin', 'super_admin'],
             default: 'admin'
         },
+
         isActive: {
             type: Boolean,
             default: true
@@ -32,24 +39,26 @@ const adminSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-// Hash password before saving
+/* ---------------- PASSWORD HASH ---------------- */
 adminSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) return next();
     try {
+        if (!this.isModified('password')) return next();
+
         const salt = await bcryptjs.genSalt(10);
         this.password = await bcryptjs.hash(this.password, salt);
+
         next();
     } catch (error) {
         next(error);
     }
 });
 
-// Method to compare passwords
+/* ---------------- COMPARE PASSWORD ---------------- */
 adminSchema.methods.comparePassword = async function (enteredPassword) {
     return await bcryptjs.compare(enteredPassword, this.password);
 };
 
-// Remove password from response
+/* ---------------- REMOVE PASSWORD FROM JSON ---------------- */
 adminSchema.methods.toJSON = function () {
     const obj = this.toObject();
     delete obj.password;
