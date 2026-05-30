@@ -16,10 +16,11 @@ export const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ error: 'Token missing from Authorization header' });
     }
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET || 'your-secret-key'
-    );
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ error: 'Server misconfiguration: JWT_SECRET missing' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     req.user = decoded;
     next();

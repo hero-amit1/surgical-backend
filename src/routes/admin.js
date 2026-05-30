@@ -57,9 +57,13 @@ router.post('/login', async (req, res) => {
             return res.status(403).json({ error: 'Account is inactive' });
         }
 
+        if (!process.env.JWT_SECRET) {
+            return res.status(500).json({ error: 'Server misconfiguration: JWT_SECRET missing' });
+        }
+
         const token = jwt.sign(
             { id: admin._id, email: admin.email, role: admin.role },
-            process.env.JWT_SECRET || 'your-secret-key',
+            process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
 
