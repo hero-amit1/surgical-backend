@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import mongoose from 'mongoose';
+
 import adminRoutes from './routes/admin.js';
 import productRoutes from './routes/products.js';
 import userRoutes from './routes/users.js';
@@ -17,60 +18,85 @@ import paymentRoutes from './routes/payments.js';
 
 const app = express();
 
+/* ---------------- MIDDLEWARE ---------------- */
 app.use(helmet());
+
 app.use(
-    cors({
-        origin: process.env.CORS_ORIGIN?.split(',')?.map(s => s.trim()) || '*',
-        credentials: true
-    })
+  cors({
+    origin: process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim())
+      : '*',
+    credentials: true,
+  })
 );
+
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use(
-    rateLimit({
-        windowMs: 15 * 60 * 1000,
-        max: 200,
-        standardHeaders: true,
-        legacyHeaders: false
-    })
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 200,
+    standardHeaders: true,
+    legacyHeaders: false,
+  })
 );
 
-app.get('/health', (_req, res) => res.json({ ok: true }));
+/* ---------------- TEST ROUTES ---------------- */
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Surgical Backend is Running 🚀',
+  });
+});
 
-// Admin Routes
+app.get('/health', (req, res) => {
+  res.json({
+    success: true,
+    mongoConnected: mongoose.connection.readyState === 1,
+  });
+});
+
+/* ---------------- API ROUTES ---------------- */
 app.use('/api/admin', adminRoutes);
-
-// Customer Routes
 app.use('/api/auth', userRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/wishlist', wishlistRoutes);
-
-// Product Routes
 app.use('/api/products', productRoutes);
 app.use('/api/search', searchRoutes);
-
-// Analytics & Payments
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/payments', paymentRoutes);
 
+/* ---------------- START SERVER ---------------- */
 const start = async () => {
-    const mongoUri = process.env.MONGODB_URI;
+  try {
+    // Accept both env names (fix common Render mistake)
+    const mongoUri =
+      process.env.MONGODB_URI || process.env.MONGO_URI;
+
     if (!mongoUri) {
-        console.error('Missing MONGODB_URI');
-        process.exit(1);
+      console.error('❌ MONGODB_URI or MONGO_URI is missing in Render env');
+      process.exit(1);
     }
+
+    console.log('🔄 Connecting to MongoDB...');
 
     await mongoose.connect(mongoUri);
 
+    console.log('✅ MongoDB Connected Successfully');
+
     const port = process.env.PORT || 5000;
-    app.listen(port, () => console.log(`Backend listening on ${port}`));
+
+    app.listen(port, () => {
+      console.log(`🚀 Server running on port ${port}`);
+    });
+  } catch (error) {
+    console.error('❌ MongoDB Connection Failed');
+    console.error(error);
+    process.exit(1);
+  }
 };
 
-start().catch(err => {
-    console.error(err);
-    process.exit(1);
-});
-
+start();
