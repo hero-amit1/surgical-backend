@@ -19,7 +19,23 @@ import paymentRoutes from './routes/payments.js';
 const app = express();
 
 /* ---------------- MIDDLEWARE ---------------- */
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:'],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'", 'data:'],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+        baseUri: ["'self'"],
+      },
+    },
+  })
+);
 
 app.use(
   cors({
@@ -29,6 +45,8 @@ app.use(
     credentials: true,
   })
 );
+
+app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));

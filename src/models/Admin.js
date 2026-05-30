@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
-import bcryptjs from 'bcryptjs';
+import mongoose from "mongoose";
+import bcryptjs from "bcryptjs";
 
 const adminSchema = new mongoose.Schema(
     {
@@ -16,7 +16,7 @@ const adminSchema = new mongoose.Schema(
             type: String,
             required: true,
             minlength: 6,
-            select: false // 🔥 prevents password from being returned in queries
+            select: false // hidden by default
         },
 
         name: {
@@ -27,8 +27,8 @@ const adminSchema = new mongoose.Schema(
 
         role: {
             type: String,
-            enum: ['admin', 'super_admin'],
-            default: 'admin'
+            enum: ["admin", "super_admin"],
+            default: "admin"
         },
 
         isActive: {
@@ -39,17 +39,16 @@ const adminSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-/* ---------------- PASSWORD HASH ---------------- */
-adminSchema.pre('save', async function (next) {
-    try {
-        if (!this.isModified('password')) return next();
+/* ---------------- HASH PASSWORD BEFORE SAVE ---------------- */
+adminSchema.pre("save", async function (next) {
+    if (!this.isModified("password")) return next();
 
+    try {
         const salt = await bcryptjs.genSalt(10);
         this.password = await bcryptjs.hash(this.password, salt);
-
         next();
-    } catch (error) {
-        next(error);
+    } catch (err) {
+        next(err);
     }
 });
 
@@ -58,11 +57,11 @@ adminSchema.methods.comparePassword = async function (enteredPassword) {
     return await bcryptjs.compare(enteredPassword, this.password);
 };
 
-/* ---------------- REMOVE PASSWORD FROM JSON ---------------- */
+/* ---------------- EXPOSE SAFE JSON ---------------- */
 adminSchema.methods.toJSON = function () {
     const obj = this.toObject();
     delete obj.password;
     return obj;
 };
 
-export default mongoose.model('Admin', adminSchema);
+export default mongoose.model("Admin", adminSchema);

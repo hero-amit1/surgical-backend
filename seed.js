@@ -26,14 +26,10 @@ const seedDatabase = async () => {
         await User.deleteMany({});
         console.log('🗑️ Cleared existing data');
 
-        // 🔥 HASH PASSWORDS (IMPORTANT FIX)
-        const adminPasswordHash = await bcrypt.hash('Admin@123', 10);
-        const userPasswordHash = await bcrypt.hash('User@123', 10);
-
-        // Create admin
+        // Create admin (password will be hashed by the Admin model pre-save hook)
         const admin = await Admin.create({
             email: 'admin@test.com',
-            password: adminPasswordHash,
+            password: 'Admin@123',
             name: 'Test Admin',
             role: 'admin'
         });
@@ -42,10 +38,10 @@ const seedDatabase = async () => {
         console.log('   Email: admin@test.com');
         console.log('   Password: Admin@123');
 
-        // Create user
+        // Create user (password will be hashed by the User model pre-save hook)
         const user = await User.create({
             email: 'user@test.com',
-            password: userPasswordHash,
+            password: 'User@123',
             name: 'Test User',
             phone: '9876543210'
         });

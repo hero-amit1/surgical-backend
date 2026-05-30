@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import Review from '../models/Review.js';
 import Order from '../models/Order.js';
 import { authMiddleware } from '../middleware/auth.js';
@@ -29,7 +30,7 @@ router.get('/product/:productId', async (req, res) => {
         const total = await Review.countDocuments({ product: req.params.productId });
 
         const stats = await Review.aggregate([
-            { $match: { product: require('mongoose').Types.ObjectId(req.params.productId) } },
+            { $match: { product: mongoose.Types.ObjectId(req.params.productId) } },
             {
                 $group: {
                     _id: null,
