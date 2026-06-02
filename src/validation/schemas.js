@@ -20,6 +20,7 @@ export const productSchema = z.object({
     description: z.string().min(10, 'Description must be at least 10 characters'),
     price: z.number().positive('Price must be positive'),
     category: z.string().min(2, 'Category required'),
+    subcategory: z.string().optional(),
     image: z.string().url().optional().nullable(),
     stock: z.number().min(0, 'Stock cannot be negative').optional(),
     specifications: z.record(z.string()).optional()

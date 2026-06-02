@@ -43,10 +43,12 @@ router.get('/:id', async (req, res) => {
 // Create product (protected)
 router.post('/', authMiddleware, async (req, res) => {
     try {
+        // image is expected to be a Cloudinary URL now
         const {
             name,
             slug,
             brand,
+            subcategory,
             description,
             price,
             category,
@@ -57,6 +59,7 @@ router.post('/', authMiddleware, async (req, res) => {
             trending,
             specifications,
         } = req.body;
+
 
         if (!name || !slug || !description || !price || !category) {
             return res.status(400).json({ error: 'Missing required fields' });
@@ -72,6 +75,7 @@ router.post('/', authMiddleware, async (req, res) => {
             name,
             slug,
             brand,
+            subcategory,
             description,
             price,
             category,
@@ -98,6 +102,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
             name,
             slug,
             brand,
+            subcategory,
             description,
             price,
             category,
@@ -108,6 +113,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
             trending,
             specifications,
         } = req.body;
+
 
         const specs = Array.isArray(specifications)
             ? specifications
@@ -121,6 +127,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
                 name,
                 slug,
                 brand,
+                subcategory,
                 description,
                 price,
                 category,

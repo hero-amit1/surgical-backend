@@ -15,6 +15,8 @@ import wishlistRoutes from "./routes/wishlist.js";
 import searchRoutes from "./routes/search.js";
 import analyticsRoutes from "./routes/analytics.js";
 import paymentRoutes from "./routes/payments.js";
+import cloudinaryUploadRoutes from "./routes/cloudinaryUpload.js";
+
 
 const app = express();
 
@@ -77,8 +79,10 @@ app.use("/api/products", productRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/uploads", cloudinaryUploadRoutes);
 
 /* ---------------- START SERVER ---------------- */
+
 const start = async () => {
   try {
     const mongoUri =
